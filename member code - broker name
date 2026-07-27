@@ -1,24 +1,7 @@
-| Code                                                                                                                                         | Occurrences (in sample) |
-| -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| 0446                                                                                                                                         | 400                     |
-| 6498                                                                                                                                         | 60                      |
-| 0612                                                                                                                                         | 45                      |
-| 6699                                                                                                                                         | 29                      |
-| 6155                                                                                                                                         | 13                      |
-| 0095                                                                                                                                         | 8                       |
-| 0748                                                                                                                                         | 7                       |
-| 6593                                                                                                                                         | 6                       |
-| 0179                                                                                                                                         | 6                       |
-| 0673                                                                                                                                         | 5                       |
-| 3299, 0393                                                                                                                                   | 4 each                  |
-| 0907, 0325, 3261, 4043, 6690, 0103                                                                                                           | 3 each                  |
-| 6363, 6676, 0313, 3163, 6741, 6813                                                                                                           | 2 each                  |
-| 6706, 3004, 0470, 3013, 0935, 3064, 6697, 6284, 6681, 0949, 6648, 0184, 6867, 0307, 0235, 6745, 2001, 3256 (and several more appearing once) | 1 each                  |
-
 # Scraping tool to directly map member codes with broker_name using official BSE website
 import pandas as pd
 from playwright.sync_api import sync_playwright
-
+#Just add the codes here to find the broker_name
 member_codes = [
     "0446", "6498", "0612", "6699", "6155", "0095", "0748", "6593", "0179", "0673",
     "3299", "0393", "0907", "0325", "3261", "4043", "6690", "0103",
@@ -85,3 +68,47 @@ if __name__ == "__main__":
     df = pd.DataFrame(data)
     df.to_excel("bse_member_code_first_suggestion.xlsx", index=False)
     print(df)
+#result
+Member Code	Broker Name
+0446	Motilal Oswal Financial Services Limited
+6498	Zerodha Broking Ltd.
+0612	Angel One Limited
+6699	Groww Invest Tech Private Limited
+6155	Upstox Securities Pvt. Ltd.
+0095	Sbicap Securities Ltd.
+0748	Sharekhan Ltd.
+6593	Raise Securities Private Limited
+0179	Iifl Capital Services Limited
+0673	Kotak Securities Ltd.
+3299	Choice Equity Broking Private Limited
+0393	Hdfc Securities Ltd.
+0907	Indiabulls Securities Limited
+0325	Jm Financial Services Limited
+3261	Nuvama Wealth And Investment Ltd.
+4043	Finvasia Securities Pvt. Ltd.
+6690	Moneywise Finvest Ltd.
+0103	Icici Securities Ltd.
+6363	5Paisa Capital Limited
+6676	Profitmart Securities Pvt. Ltd.
+0313	Arihant Capital Markets Ltd.
+3163	Axis Securities Limited
+6741	Hem Finlease Private Limited
+6813	Nu Investors Technologies Private Limited
+6706	Bajaj Financial Securities Limited
+3004	Religare Broking Ltd.
+0470	Smc Global Securities Ltd.
+3013	Pace Stock Broking Services Pvt.Ltd.
+0935	Samco Securities Ltd.
+3064	Rajvi Stock Broking Pvt. Ltd.
+6697	Fyers Securities Pvt. Ltd.
+6284	Tradeswift Broking Pvt.Ltd.
+6681	Mirae Asset Capital Markets (India) Pvt. Ltd.
+0949	Anand Rathi Share & Stock Brokers Ltd.
+6648	Goodwill Wealth Management Pvt. Ltd.
+0184	Aditya Birla Money Ltd.
+6867	Aaritya Broking Private Limited
+0307	Ventura Securities Ltd.
+0235	Bonanza Portfolio Ltd.
+6745	Gopocket Invest Tech Private Limited
+2001	Jainam Broking Ltd.
+3256	Indbank Merchant Banking Services Ltd.
