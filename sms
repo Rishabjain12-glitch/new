@@ -71,8 +71,7 @@ CLASSIFY_CHUNK_SIZE = 5_000          # rows per chunk when multiprocessing
 
 
 def _p(pattern):
-    """Compile a regex pattern with IGNORECASE and DOTALL flags.
-    Every SMS rule uses this helper so flags are consistent.
+    """Whenever I make a regex for SMS matching, always make it case-insensitive and allow it to match across multiple lines.
     """
     return re.compile(pattern, re.I | re.S)
 
