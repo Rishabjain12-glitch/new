@@ -14,3 +14,92 @@
 | 0907, 0325, 3261, 4043, 6690, 0103                                                                                                           | 3 each                  |
 | 6363, 6676, 0313, 3163, 6741, 6813                                                                                                           | 2 each                  |
 | 6706, 3004, 0470, 3013, 0935, 3064, 6697, 6284, 6681, 0949, 6648, 0184, 6867, 0307, 0235, 6745, 2001, 3256 (and several more appearing once) | 1 each                  |
+0446 - MOTILAL OSWAL FINANCIAL SERVICES LIMITED
+6498 - ZERODHA BROKING LTD.
+0612 - ANGEL ONE LIMITED
+6699 - GROWW INVEST TECH PRIVATE LIMITED
+6155 - UPSTOX SECURITIES PVT. LTD.
+0095 - SBICAP SECURITIES LTD.
+0748 - SHAREKHAN LTD.
+6593 - RAISE SECURITIES PRIVATE LIMITED
+0179 - IIFL CAPITAL SERVICES LIMITED
+0673 - KOTAK SECURITIES LTD.
+3299 - Choice Equity Broking Private Limited
+0393 - HDFC SECURITIES LTD.
+0907 - INDIABULLS SECURITIES LIMITED
+0325 - JM FINANCIAL SERVICES LIMITED
+3261 - NUVAMA WEALTH AND INVESTMENT LTD.
+4043 - FINVASIA SECURITIES PVT. LTD.
+
+import pandas as pd
+from playwright.sync_api import sync_playwright
+
+member_codes = [
+    "0446", "6498", "0612", "6699", "6155", "0095", "0748", "6593", "0179", "0673",
+    "3299", "0393", "0907", "0325", "3261", "4043", "6690", "0103",
+    "6363", "6676", "0313", "3163", "6741", "6813",
+    "6706", "3004", "0470", "3013", "0935", "3064", "6697", "6284", "6681",
+    "0949", "6648", "0184", "6867", "0307", "0235", "6745", "2001", "3256"
+]
+#scraping code for retrieval of broker_names from member codes (detected from the input sms data)
+def get_broker_names(codes):
+    results = []
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False)
+        page = browser.new_page()
+        page.goto("https://www.bseindia.com/members/membershipdirectory", wait_until="domcontentloaded", timeout=60000)
+
+        page.wait_for_timeout(4000)
+
+        search_box = page.get_by_placeholder("Enter Member Name")
+        submit_btn = page.get_by_role("button", name="Submit")
+        reset_btn = page.get_by_role("button", name="Reset")
+
+        for code in codes:
+            try:
+                search_box.fill("")
+                search_box.fill(code)
+                submit_btn.click()
+                page.wait_for_timeout(2500)
+
+                rows = page.locator("tbody tr")
+                row_count = rows.count()
+
+                broker_name = ""
+
+                for i in range(row_count):
+                    cols = rows.nth(i).locator("td")
+                    col_count = cols.count()
+
+                    if col_count >= 5:
+                        member_code = cols.nth(3).inner_text().strip()
+                        member_name = cols.nth(1).inner_text().strip()
+
+                        if member_code.zfill(4) == code.zfill(4):
+                            broker_name = member_name
+                            break
+
+                results.append({
+                    "Member Code": code,
+                    "Broker Name": broker_name
+                })
+
+                reset_btn.click()
+                page.wait_for_timeout(1500)
+
+            except Exception as e:
+                results.append({
+                    "Member Code": code,
+                    "Broker Name": f"ERROR: {str(e)}"
+                })
+
+        browser.close()
+
+    return results
+
+if __name__ == "__main__":
+    data = get_broker_names(member_codes)
+    df = pd.DataFrame(data)
+    df.to_excel("bse_member_code_broker_names.xlsx", index=False)
+    print(df)
