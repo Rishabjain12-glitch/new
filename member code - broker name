@@ -1,114 +1,85 @@
-# Scraping tool to directly map member codes with broker_name using official BSE website
 import pandas as pd
 from playwright.sync_api import sync_playwright
-#Just add the codes here to find the broker_name
-member_codes = [
-    "0446", "6498", "0612", "6699", "6155", "0095", "0748", "6593", "0179", "0673",
-    "3299", "0393", "0907", "0325", "3261", "4043", "6690", "0103",
-    "6363", "6676", "0313", "3163", "6741", "6813",
-    "6706", "3004", "0470", "3013", "0935", "3064", "6697", "6284", "6681",
-    "0949", "6648", "0184", "6867", "0307", "0235", "6745", "2001", "3256"
-]
 
-def extract_name(selected_text):
-    selected_text = selected_text.replace("Â", " ").strip()
-    if "|" in selected_text:
-        return selected_text.split("|", 1)[1].strip().title()
-    return selected_text.title()
 
-def scrape_first_suggestion(codes):
-    results = []
+def scrape_all_brokers():
+    all_rows = []
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False)
         page = browser.new_page(viewport={"width": 1600, "height": 1200})
-        page.goto("https://www.bseindia.com/members/membershipdirectory", wait_until="domcontentloaded", timeout=60000)
-        page.wait_for_timeout(4000)
 
-        search_box = page.get_by_placeholder("Enter Member Name")
-        search_box.wait_for(timeout=30000)
+        page.goto(
+            "https://www.bseindia.com/members/MembershipDirectory.aspx",
+            wait_until="domcontentloaded",
+            timeout=60000
+        )
+        page.wait_for_timeout(5000)
 
-        for code in codes:
+        # Wait for table to appear
+        page.wait_for_selector("table")
+        page.wait_for_timeout(3000)
+
+        visited_pages = set()
+
+        while True:
+            page_no = page.locator("a.current, span.current").first.text_content(timeout=3000) if page.locator("a.current, span.current").count() > 0 else None
+            if page_no in visited_pages:
+                break
+            if page_no:
+                visited_pages.add(page_no)
+
+            tables = page.locator("table")
+            table_found = False
+
+            for t in range(tables.count()):
+                table = tables.nth(t)
+                rows = table.locator("tr")
+
+                if rows.count() < 2:
+                    continue
+
+                headers = [h.inner_text().strip() for h in rows.nth(0).locator("th, td").all()]
+                normalized_headers = [h.lower().replace("\n", " ").strip() for h in headers]
+
+                if any("member name" in h for h in normalized_headers) and any("member code" in h for h in normalized_headers):
+                    table_found = True
+
+                    for i in range(1, rows.count()):
+                        cols = [c.inner_text().strip() for c in rows.nth(i).locator("td").all()]
+                        if len(cols) >= 5:
+                            all_rows.append({
+                                "Sr No.": cols[0],
+                                "Member Name": cols[1],
+                                "Trade Name": cols[2],
+                                "Member Code": cols[3],
+                                "SEBI Registration No.": cols[4]
+                            })
+                    break
+
+            if not table_found:
+                print("No valid data table found on this page.")
+                break
+
+            # Try clicking Next page if available
+            next_button = page.locator("text=Next").first
+
+            if next_button.count() == 0 or not next_button.is_visible():
+                break
+
             try:
-                search_box.click()
-                search_box.fill("")
-                page.wait_for_timeout(300)
-
-                search_box.press_sequentially(code, delay=120)
-                page.wait_for_timeout(1500)
-
-                page.keyboard.press("ArrowDown")
-                page.wait_for_timeout(300)
-                page.keyboard.press("Enter")
-                page.wait_for_timeout(1000)
-
-                selected_value = search_box.input_value()
-                broker_name = extract_name(selected_value)
-
-                results.append({
-                    "Member Code": code,
-                    "Broker Name": broker_name
-                })
-
-                search_box.fill("")
-                page.wait_for_timeout(500)
-
-            except Exception as e:
-                results.append({
-                    "Member Code": code,
-                    "Broker Name": f"ERROR: {str(e)}"
-                })
+                next_button.click()
+                page.wait_for_timeout(4000)
+            except Exception:
+                break
 
         browser.close()
 
-    return results
+    df = pd.DataFrame(all_rows).drop_duplicates()
+    return df
+
 
 if __name__ == "__main__":
-    data = scrape_first_suggestion(member_codes)
-    df = pd.DataFrame(data)
-    df.to_excel("bse_member_code_first_suggestion.xlsx", index=False)
+    df = scrape_all_brokers()
+    df.to_excel("bse_all_brokers.xlsx", index=False)
     print(df)
-#result
-Member Code	Broker Name
-0446	Motilal Oswal Financial Services Limited
-6498	Zerodha Broking Ltd.
-0612	Angel One Limited
-6699	Groww Invest Tech Private Limited
-6155	Upstox Securities Pvt. Ltd.
-0095	Sbicap Securities Ltd.
-0748	Sharekhan Ltd.
-6593	Raise Securities Private Limited
-0179	Iifl Capital Services Limited
-0673	Kotak Securities Ltd.
-3299	Choice Equity Broking Private Limited
-0393	Hdfc Securities Ltd.
-0907	Indiabulls Securities Limited
-0325	Jm Financial Services Limited
-3261	Nuvama Wealth And Investment Ltd.
-4043	Finvasia Securities Pvt. Ltd.
-6690	Moneywise Finvest Ltd.
-0103	Icici Securities Ltd.
-6363	5Paisa Capital Limited
-6676	Profitmart Securities Pvt. Ltd.
-0313	Arihant Capital Markets Ltd.
-3163	Axis Securities Limited
-6741	Hem Finlease Private Limited
-6813	Nu Investors Technologies Private Limited
-6706	Bajaj Financial Securities Limited
-3004	Religare Broking Ltd.
-0470	Smc Global Securities Ltd.
-3013	Pace Stock Broking Services Pvt.Ltd.
-0935	Samco Securities Ltd.
-3064	Rajvi Stock Broking Pvt. Ltd.
-6697	Fyers Securities Pvt. Ltd.
-6284	Tradeswift Broking Pvt.Ltd.
-6681	Mirae Asset Capital Markets (India) Pvt. Ltd.
-0949	Anand Rathi Share & Stock Brokers Ltd.
-6648	Goodwill Wealth Management Pvt. Ltd.
-0184	Aditya Birla Money Ltd.
-6867	Aaritya Broking Private Limited
-0307	Ventura Securities Ltd.
-0235	Bonanza Portfolio Ltd.
-6745	Gopocket Invest Tech Private Limited
-2001	Jainam Broking Ltd.
-3256	Indbank Merchant Banking Services Ltd.
