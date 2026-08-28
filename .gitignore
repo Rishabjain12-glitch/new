@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Inputs and generated outputs
+*.csv
+*.xlsx
+outputs/
+data/
+
+# Browser and local settings
+.env
+.browser-profile/
+.vscode/
+.idea/
+.DS_Store
