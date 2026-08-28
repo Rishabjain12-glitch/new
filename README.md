@@ -113,7 +113,7 @@ The final `.xlsx` contains:
 
 Edit `INPUT_CSV` and `OUTPUT_DIR` at the bottom of the file (Section 12), then run:
 ```
-python sms_warehouse_v7.py
+python sms_warehouse_builder.py
 ```
 This produces `sms_warehouse.xlsx` in the output folder.
 
